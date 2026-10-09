@@ -1,0 +1,72 @@
+generator client {
+    provider = "prisma-client"
+    output   = "../generated/prisma"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+enum Role {
+    User
+    Admin
+}
+
+model User {
+    id           String        @id @default(uuid())
+    email        String        @unique
+    password     String
+    role         Role          @default(User)
+    leaderBoards LeaderBoard[]
+    submissions  Submission[]
+}
+
+model Contest {
+    id           String             @id @default(uuid())
+    title        String
+    startTime    DateTime
+    challenges   ContestChallenge[]
+    leaderBoards LeaderBoard[]
+}
+
+model Challenge {
+    id          String             @id @default(uuid())
+    title       String
+    notionDocId String
+    maxPoints   Int
+    contests    ContestChallenge[]
+}
+
+model ContestChallenge {
+    id          String       @id @default(uuid())
+    contestId   String
+    challengeId String
+    index       Int
+    contest     Contest      @relation(fields: [contestId], references: [id])
+    challenge   Challenge    @relation(fields: [challengeId], references: [id])
+    submissions Submission[]
+
+    @@unique([contestId, challengeId])
+}
+
+model Submission {
+    id                 String           @id @default(uuid())
+    contestChallengeId String
+    userId             String
+    points             Int
+    createdAt          DateTime         @default(now())
+    user               User             @relation(fields: [userId], references: [id])
+    contestChallenge   ContestChallenge @relation(fields: [contestChallengeId], references: [id])
+}
+
+model LeaderBoard {
+    id        String  @id @default(uuid())
+    contestId String
+    userId    String
+    rank      Int
+    contest   Contest @relation(fields: [contestId], references: [id])
+    user      User    @relation(fields: [userId], references: [id])
+
+    @@unique([contestId, rank])
+    @@unique([contestId, userId])
+}
